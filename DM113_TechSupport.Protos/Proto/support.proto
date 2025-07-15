@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option csharp_namespace = "dm113_tech_support";
+
+package support;
+
+
+service Support {
+  rpc OpenTicket(OpenTicketRequest) returns (OpenTicketReply);
+  rpc ChatSupport(stream ChatMessage) returns (stream ChatMessage);
+}
+
+message OpenTicketRequest {
+  string user_name = 1;
+  string description = 2;
+}
+
+message OpenTicketReply {
+  string ticket_id = 1;
+  string message = 2;
+}
+
+message ChatMessage {
+  string ticket_id = 1;
+  string sender = 2;
+  string message = 3;
+}
