@@ -24,4 +24,8 @@
         <ProjectReference Include="..\DM113_TechSupport.Protos\DM113_TechSupport.Protos.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Logs\Chats\" />
+    </ItemGroup>
+
 </Project>

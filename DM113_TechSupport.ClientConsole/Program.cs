@@ -2,15 +2,15 @@
 using Grpc.Core;
 using Grpc.Net.Client;
 
-Console.WriteLine("🧑 CLIENTE - Sistema de Suporte Técnico");
+Console.WriteLine("\n\nSistema de Suporte Técnico | CLIENTE\n");
 using var channel = GrpcChannel.ForAddress("http://localhost:5000");
 var client = new Support.SupportClient(channel);
 
 // Abrir chamado
-Console.Write("Seu nome: ");
+Console.Write("> Seu nome: ");
 var nome = Console.ReadLine();
 
-Console.Write("Descreva o problema: ");
+Console.Write("> Descreva o problema: ");
 var descricao = Console.ReadLine();
 
 var resposta = await client.OpenTicketAsync(new OpenTicketRequest
@@ -19,8 +19,8 @@ var resposta = await client.OpenTicketAsync(new OpenTicketRequest
     Description = descricao
 });
 
-Console.WriteLine($"\n✅ Chamado aberto com ID: {resposta.TicketId}");
-Console.WriteLine("Aguardando conexão do atendente... Digite mensagens para conversar.\n");
+Console.WriteLine($"\n >> Chamado aberto com ID: {resposta.TicketId}");
+Console.WriteLine("\n > Aguardando conexão do atendente... Digite mensagens para conversar.\n");
 
 // Inicia sessão de chat
 using var call = client.ChatSupport();
@@ -35,14 +35,15 @@ var sending = Task.Run(async () =>
     });
     while (true)
     {
-        var msg = "[" + nome + "]" + Console.ReadLine();
+        var msg = Console.ReadLine();
         if (string.IsNullOrWhiteSpace(msg)) continue;
 
         await call.RequestStream.WriteAsync(new ChatMessage
         {
             TicketId = resposta.TicketId,
             Sender = nome,
-            Message = msg
+            Message = msg,
+            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         });
     }
 });
@@ -53,9 +54,12 @@ var receiving = Task.Run(async () =>
     {
         if (incoming.Sender != nome)
         {
+            var time = DateTimeOffset.FromUnixTimeSeconds(incoming.Timestamp).ToLocalTime().ToString("HH:mm:ss");
+            var sender = incoming.Sender.PadRight(20);
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"{incoming.Sender}: {incoming.Message}");
+            Console.WriteLine($"> [{time}] {sender}: {incoming.Message}");
             Console.ResetColor();
+
         }
     }
 });

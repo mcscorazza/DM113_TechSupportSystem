@@ -19,7 +19,7 @@ public class SupportService : Support.SupportBase
     {
         Directory.CreateDirectory(LogsPath);
 
-        string ticketId = Guid.NewGuid().ToString();
+        string ticketId = GenerateTicketId();
         string log = $"{ticketId}|{request.UserName}|{request.Description}|{DateTime.UtcNow}|aberto";
 
         File.AppendAllText(TicketFilePath, log + Environment.NewLine);
@@ -32,33 +32,59 @@ public class SupportService : Support.SupportBase
     }
 
     public override async Task ChatSupport(
-        IAsyncStreamReader<ChatMessage> requestStream,
-        IServerStreamWriter<ChatMessage> responseStream,
-        ServerCallContext context)
+    IAsyncStreamReader<ChatMessage> requestStream,
+    IServerStreamWriter<ChatMessage> responseStream,
+    ServerCallContext context)
     {
         await foreach (var message in requestStream.ReadAllAsync())
         {
-            var isAgent = message.Sender.StartsWith("Agent:");
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Msg recebida de {message.Sender}: {message.Message}");
+            var isAgent = message.Sender.StartsWith(" >>> ");
 
             if (isAgent)
             {
-                AgentStreams[message.TicketId] = responseStream;
+                Console.WriteLine("-> Encaminhando para cliente");
+                AgentStreams.TryAdd(message.TicketId, responseStream);
+
                 if (ClientStreams.TryGetValue(message.TicketId, out var clientStream))
+                {
                     await clientStream.WriteAsync(message);
+                }
+                else
+                {
+                    Console.WriteLine(" ! Cliente ainda não conectado.");
+                }
             }
             else
             {
-                ClientStreams[message.TicketId] = responseStream;
+                Console.WriteLine("-> Encaminhando para atendente");
+                ClientStreams.TryAdd(message.TicketId, responseStream);
                 if (AgentStreams.TryGetValue(message.TicketId, out var agentStream))
+                {
                     await agentStream.WriteAsync(message);
+                }
+                else
+                {
+                    Console.WriteLine(" ! Atendente ainda não conectado.");
+                }
             }
 
+            // Salvar log em arquivo
             Directory.CreateDirectory(ChatLogsPath);
-
             var logLine = $"[{DateTime.UtcNow}] {message.Sender}: {message.Message}";
             var logFilePath = Path.Combine(ChatLogsPath, $"chat_{message.TicketId}.log");
-
             File.AppendAllText(logFilePath, logLine + Environment.NewLine);
         }
     }
+
+    private static string GenerateTicketId()
+    {
+        var datePart = DateTime.UtcNow.ToString("yyMMdd");
+        var rand = new Random();
+        var suffix = new string(Enumerable.Repeat("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", 4)
+            .Select(s => s[rand.Next(s.Length)]).ToArray());
+
+        return $"TKT-{datePart}-{suffix}";
+    }
 }
+

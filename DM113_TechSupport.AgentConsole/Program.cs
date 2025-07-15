@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading.Channels;
 using Grpc.Core;
 
-Console.WriteLine("\n\n🎧 ATENDENTE - Sistema de Suporte Técnico\n");
+Console.WriteLine("\n\nSistema de Suporte Técnico - ATENDENTE\n");
 var ticketFilePath = GetTicketFilePath();
 
 Console.WriteLine(ticketFilePath);
@@ -12,11 +12,11 @@ Console.WriteLine(ticketFilePath);
 // Exibir chamados abertos
 if (!File.Exists(ticketFilePath))
 {
-    Console.WriteLine("⚠️ Nenhum chamado encontrado.");
+    Console.WriteLine(" > Nenhum chamado encontrado.");
     return;
 }
 
-Console.WriteLine("\n📋 Chamados disponíveis:\n");
+Console.WriteLine("\n > Chamados disponíveis:\n");
 var lines = File.ReadAllLines(ticketFilePath)
                 .Where(line => line.Trim().Length > 0)
                 .ToList();
@@ -26,18 +26,18 @@ foreach (var line in lines)
     var parts = line.Split('|');
     if (parts.Length >= 5 && parts[4] == "aberto")
     {
-        Console.WriteLine($"  >>> ID: {parts[0]} | Usuário: {parts[1]} | Descrição: {parts[2]}");
+        Console.WriteLine($" > ID: {parts[0]} | Usuário: {parts[1]} | Descrição: {parts[2]}");
     }
 }
 
-Console.Write("\nDigite o ticket_id que deseja atender: ");
+Console.Write("\n > Digite o ticket_id que deseja atender: ");
 var ticketId = Console.ReadLine();
 
-Console.Write("\nSeu nome (atendente): ");
+Console.Write("\n > Seu nome (atendente): ");
 var nome = Console.ReadLine();
-var sender = $"[{nome}]";
+var sender = $" >>> [{nome}]";
 
-Console.WriteLine($"\n💬 Entrou no chat do ticket {ticketId}...\n\n");
+Console.WriteLine($"\n > Entrou no chat do ticket {ticketId}...\n\n");
 
 // Iniciar canal gRPC
 using var channel = GrpcChannel.ForAddress("http://localhost:5000");
@@ -64,7 +64,8 @@ var sending = Task.Run(async () =>
         {
             TicketId = ticketId,
             Sender = sender,
-            Message = "  >>> " + msg
+            Message = "  >>> " + msg,
+            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         });
     }
 });
@@ -75,8 +76,10 @@ var receiving = Task.Run(async () =>
     {
         if (incoming.Sender != sender)
         {
+            var time = DateTimeOffset.FromUnixTimeSeconds(incoming.Timestamp).ToLocalTime().ToString("HH:mm:ss");
+            var sender = incoming.Sender.PadRight(20); // Alinha em 15 caracteres
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"{incoming.Sender}: {incoming.Message}");
+            Console.WriteLine($"  [{time}] {sender}: {incoming.Message}");
             Console.ResetColor();
         }
     }
