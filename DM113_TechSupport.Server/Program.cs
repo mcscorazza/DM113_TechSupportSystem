@@ -1,18 +1,43 @@
-using Microsoft.AspNetCore.Server.Kestrel.Core;
+﻿using Microsoft.AspNetCore.Server.Kestrel.Core;
 using DM113_TechSupport.Server.Services;
+using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// gRPC exige HTTP/2
-builder.WebHost.ConfigureKestrel(options =>
+namespace DM113_TechSupport.Server
 {
-    options.ListenLocalhost(5000, o => o.Protocols = HttpProtocols.Http2);
-});
+    internal class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddGrpc();
+            // gRPC exige HTTP/2
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenLocalhost(5000, o => o.Protocols = HttpProtocols.Http2);
+            });
 
-var app = builder.Build();
-app.MapGrpcService<SupportService>();
+            builder.Services.AddGrpc();
 
-Console.WriteLine("Servidor gRPC rodando em http://localhost:5000");
-app.Run();
+            var app = builder.Build();
+            app.MapGrpcService<SupportService>();
+            Console.OutputEncoding = Encoding.UTF8;            
+            Console.WriteLine("Servidor gRPC rodando em http://localhost:5000");
+            Console.WriteLine("\nSistema de Suporte Técnico | SERVIDOR\n");
+            Console.WriteLine("\n");
+            Console.WriteLine("  ╔════════════════════════════════════════╗");
+            Console.WriteLine("  ║                  SISUTÉ                ║");
+            Console.WriteLine("  ╠════════════════════════════════════════╣");
+            Console.WriteLine("  ║                                        ║");
+            Console.WriteLine("  ║       ███████╗ ███████╗ ████████╗      ║");
+            Console.WriteLine("  ║       ██╔════╝ ██╔════╝ ╚══██╔══╝      ║");
+            Console.WriteLine("  ║       ███████╗ ███████╗    ██║         ║");
+            Console.WriteLine("  ║       ╚════██║ ╚════██║    ██║         ║");
+            Console.WriteLine("  ║       ███████║ ███████║    ██║         ║");
+            Console.WriteLine("  ║       ╚══════╝ ╚══════╝    ╚═╝         ║");
+            Console.WriteLine("  ║                                        ║");
+            Console.WriteLine("  ╚════════════════════════════════════════╝");
+            Console.WriteLine("\n");
+            app.Run();
+        }
+    }
+}

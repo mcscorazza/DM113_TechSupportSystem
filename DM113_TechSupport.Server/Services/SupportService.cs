@@ -6,7 +6,7 @@ namespace DM113_TechSupport.Server.Services;
 
 public class SupportService : Support.SupportBase
 {
-
+    // Dicionários para armazenar streams de clientes e atendentes
     private static readonly ConcurrentDictionary<string, IServerStreamWriter<ChatMessage>> ClientStreams = new();
     private static readonly ConcurrentDictionary<string, IServerStreamWriter<ChatMessage>> AgentStreams = new();
 
