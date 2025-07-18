@@ -6,14 +6,14 @@ using Grpc.Core;
 Console.ForegroundColor = ConsoleColor.Cyan;
 Console.WriteLine("\n");
 Console.WriteLine("  ╔════════════════════════════════════════════════════╗");
-Console.WriteLine("  ║      Sistema de Suporte Técnico | SISUTÉ            ║");
+Console.WriteLine("  ║      Sistema de Suporte Técnico | SISUTÉ           ║");
 Console.WriteLine("  ╠════════════════════════════════════════════════════╣");
 Console.WriteLine("  ║                                                    ║");
 Console.WriteLine("  ║              INSTRUÇÕES | ATENDENTE                ║");
 Console.WriteLine("  ║                                                    ║");
 Console.WriteLine("  ╠════════════════════════════════════════════════════╣");
-Console.WriteLine("  ║  Passo 1 - Digite o [numero] do Chamado            ║");
-Console.WriteLine("  ║  Passo 2 - Digite seu nome                         ║");
+Console.WriteLine("  ║  Passo 1 - Digite seu nome                         ║");
+Console.WriteLine("  ║  Passo 2 - Digite o [numero] do Chamado            ║");
 Console.WriteLine("  ║  Passo 3 - Converse com o cliente                  ║");
 Console.WriteLine("  ║  Comando: /sair - Para encerrar o chat             ║");
 Console.WriteLine("  ║                                                    ║");
@@ -33,6 +33,10 @@ try
         Console.ReadKey();
         return;
     }
+
+    Console.Write("\n > Seu nome (atendente): ");
+    var nome = Console.ReadLine();
+    var sender = $" >>> [{nome}]";
 
     Console.WriteLine("\n > Chamados disponíveis:\n");
     var lines = File.ReadAllLines(ticketFilePath)
@@ -65,11 +69,6 @@ try
     }
 
     var ticketId = lines[ticketIndex - 1].Split('|')[0].Trim();
-
-    Console.Write("\n > Seu nome (atendente): ");
-    var nome = Console.ReadLine();
-    var sender = $" >>> [{nome}]";
-
     Console.WriteLine($"\n > Entrou no chat do ticket {ticketId}...\n\n");
 
     // Iniciar canal gRPC
@@ -151,7 +150,7 @@ try
                 {
                     var time = DateTimeOffset.FromUnixTimeSeconds(incoming.Timestamp).ToLocalTime().ToString("HH:mm:ss");
                     var senderName = incoming.Sender.PadRight(20);
-                    Console.ForegroundColor = ConsoleColor.Yellow; // Cor do cliente
+                    Console.ForegroundColor = ConsoleColor.Cyan; // Cor do cliente
                     Console.WriteLine($"  [{time}] {senderName}: {incoming.Message}");
                     Console.ResetColor();
                 }
