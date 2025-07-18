@@ -20,9 +20,12 @@ namespace DM113_TechSupport.Server
 
             var app = builder.Build();
             app.MapGrpcService<SupportService>();
-            Console.OutputEncoding = Encoding.UTF8;            
+            //Console.OutputEncoding = Encoding.UTF8;
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.WriteLine("Servidor gRPC rodando em http://localhost:5000");
             Console.WriteLine("\nSistema de Suporte Técnico | SERVIDOR\n");
+            Console.ResetColor();
+            Console.ForegroundColor = ConsoleColor.DarkBlue;
             Console.WriteLine("\n");
             Console.WriteLine("  ╔════════════════════════════════════════╗");
             Console.WriteLine("  ║                  SISUTÉ                ║");
@@ -36,7 +39,9 @@ namespace DM113_TechSupport.Server
             Console.WriteLine("  ║       ╚══════╝ ╚══════╝    ╚═╝         ║");
             Console.WriteLine("  ║                                        ║");
             Console.WriteLine("  ╚════════════════════════════════════════╝");
+            Console.ResetColor();
             Console.WriteLine("\n");
+            
             app.Run();
         }
     }

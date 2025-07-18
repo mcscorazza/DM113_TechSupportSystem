@@ -1,8 +1,22 @@
 ﻿using dm113_tech_support;
 using Grpc.Core;
 using Grpc.Net.Client;
-
-Console.WriteLine("\n\nSistema de Suporte Técnico | CLIENTE\n");
+Console.ForegroundColor = ConsoleColor.Yellow;
+Console.WriteLine("\n");
+Console.WriteLine("  ╔════════════════════════════════════════════════════╗");
+Console.WriteLine("  ║      Sistema de Suporte Técnico | SISUTÉ           ║");
+Console.WriteLine("  ╠════════════════════════════════════════════════════╣");
+Console.WriteLine("  ║                                                    ║");
+Console.WriteLine("  ║               INSTRUÇÕES | CLIENTE                 ║");
+Console.WriteLine("  ║                                                    ║");
+Console.WriteLine("  ╠════════════════════════════════════════════════════╣");
+Console.WriteLine("  ║  Passo 1 - Digite seu nome                         ║");
+Console.WriteLine("  ║  Passo 2 - Digite o problema do produto            ║");
+Console.WriteLine("  ║  Passo 3 - Aguarde o atendente responder           ║");
+Console.WriteLine("  ║                                                    ║");
+Console.WriteLine("  ╚════════════════════════════════════════════════════╝");
+Console.WriteLine("\n");
+Console.ResetColor();
 using var channel = GrpcChannel.ForAddress("http://localhost:5000");
 var client = new Support.SupportClient(channel);
 
@@ -56,7 +70,7 @@ var receiving = Task.Run(async () =>
         {
             var time = DateTimeOffset.FromUnixTimeSeconds(incoming.Timestamp).ToLocalTime().ToString("HH:mm:ss");
             var sender = incoming.Sender.PadRight(20);
-            Console.ForegroundColor = ConsoleColor.Green;
+            Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"> [{time}] {sender}: {incoming.Message}");
             Console.ResetColor();
 

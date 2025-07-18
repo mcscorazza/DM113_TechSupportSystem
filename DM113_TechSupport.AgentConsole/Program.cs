@@ -4,10 +4,25 @@ using System.IO;
 using System.Threading.Channels;
 using Grpc.Core;
 
-Console.WriteLine("\n\nSistema de Suporte Técnico - ATENDENTE\n");
+Console.ForegroundColor = ConsoleColor.Cyan;
+Console.WriteLine("\n");
+Console.WriteLine("  ╔════════════════════════════════════════════════════╗");
+Console.WriteLine("  ║      Sistema de Suporte Técnico | SISUTÉ           ║");
+Console.WriteLine("  ╠════════════════════════════════════════════════════╣");
+Console.WriteLine("  ║                                                    ║");
+Console.WriteLine("  ║               INSTRUÇÕES | ATENDENTE               ║");
+Console.WriteLine("  ║                                                    ║");
+Console.WriteLine("  ╠════════════════════════════════════════════════════╣");
+Console.WriteLine("  ║  Passo 1 - Digite o protocolo (ticket_id)          ║");
+Console.WriteLine("  ║  Passo 2 - Digite seu nome                         ║");
+Console.WriteLine("  ║  Passo 3 - COnverse com o cliente                  ║");
+Console.WriteLine("  ║                                                    ║");
+Console.WriteLine("  ╚════════════════════════════════════════════════════╝");
+Console.WriteLine("\n");
+Console.ResetColor();
 var ticketFilePath = GetTicketFilePath();
 
-Console.WriteLine(ticketFilePath);
+//Console.WriteLine(ticketFilePath);
 
 // Exibir chamados abertos
 if (!File.Exists(ticketFilePath))
