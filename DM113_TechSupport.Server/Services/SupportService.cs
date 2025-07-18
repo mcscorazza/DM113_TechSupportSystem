@@ -36,68 +36,152 @@ public class SupportService : Support.SupportBase
         IServerStreamWriter<ChatMessage> responseStream,
         ServerCallContext context)
     {
-        await foreach (var message in requestStream.ReadAllAsync())
+        string? currentTicketId = null;
+        string? currentSender = null;
+        bool isCurrentUserAnAgent = false;
+
+        try
         {
-            var isAgent = message.Sender.StartsWith(" >>> ");
-
-            if (isAgent)
+            await foreach (var message in requestStream.ReadAllAsync())
             {
-                Console.ForegroundColor = ConsoleColor.Cyan; // Cor para mensagens do atendente
-            }
-            else
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow; // Cor para mensagens do cliente
-            }
+                if (currentTicketId == null)
+                {
+                    currentTicketId = message.TicketId;
+                    currentSender = message.Sender;
+                    isCurrentUserAnAgent = message.Sender.StartsWith(" >>> ");
+                }
 
-            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Msg recebida de {message.Sender}: {message.Message}");
+                var isAgent = message.Sender.StartsWith(" >>> ");
+
+                // Verifica se é uma mensagem de saída ou entrada
+                bool isExitMessage = message.Message.Contains("saiu do chat") ||
+                                     message.Message.Contains("entrou no chat");
+
+                if (isAgent)
+                {
+                    Console.ForegroundColor = ConsoleColor.Cyan; // Cor para mensagens do atendente
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow; // Cor para mensagens do cliente
+                }
+
+                if (!isExitMessage)
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Msg recebida de {message.Sender}: {message.Message}");
+                }
+                else
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {message.Message}");
+                }
+                Console.ResetColor();
+               
+                if (isAgent)
+                {
+                    AgentStreams.TryAdd(message.TicketId, responseStream);
+                    if (ClientStreams.TryGetValue(message.TicketId, out var clientStream))
+                    {
+                        try
+                        {
+                            await clientStream.WriteAsync(message);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($" ! Erro ao enviar mensagem para cliente: {ex.Message}");
+                            Console.ResetColor();
+                            ClientStreams.TryRemove(message.TicketId, out _);
+                        }
+                    }
+                    else if (!isExitMessage)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine(" ! Cliente ainda não conectado.");
+                        Console.ResetColor();
+                    }
+                }
+                else
+                {
+                    if (!isExitMessage)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGray; // Cor para logs internos
+                        Console.WriteLine("-> Encaminhando para atendente");
+                        Console.ResetColor();
+                    }
+
+                    ClientStreams.TryAdd(message.TicketId, responseStream);
+
+                    if (AgentStreams.TryGetValue(message.TicketId, out var agentStream))
+                    {
+                        try
+                        {
+                            await agentStream.WriteAsync(message);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($" ! Erro ao enviar mensagem para atendente: {ex.Message}");
+                            Console.ResetColor();
+
+                            // Remove o stream inválido
+                            AgentStreams.TryRemove(message.TicketId, out _);
+                        }
+                    }
+                    else if (!isExitMessage)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine(" ! Atendente ainda não conectado.");
+                        Console.ResetColor();
+                    }
+                }
+
+                // Salvar log em arquivo
+                Directory.CreateDirectory(ChatLogsPath);
+                var logLine = $"[{DateTime.UtcNow}] {message.Sender}: {message.Message}";
+                var logFilePath = Path.Combine(ChatLogsPath, $"chat_{message.TicketId}.log");
+                try
+                {
+                    await File.AppendAllTextAsync(logFilePath, logLine + Environment.NewLine);
+                }
+                catch (Exception ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($" ! Erro ao salvar log: {ex.Message}");
+                    Console.ResetColor();
+                }
+            }
+        }
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+        {
+            // Cliente ou atendente desconectou
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Usuário desconectou normalmente.");
             Console.ResetColor();
-
-            if (isAgent)
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Erro no chat: {ex.Message}");
+            Console.ResetColor();
+        }
+        finally
+        {
+            if (!string.IsNullOrEmpty(currentTicketId))
             {
-                Console.ForegroundColor = ConsoleColor.DarkGray; // Cor para logs internos
-                Console.WriteLine("-> Encaminhando para cliente");
-                Console.ResetColor();
-
-                AgentStreams.TryAdd(message.TicketId, responseStream);
-
-                if (ClientStreams.TryGetValue(message.TicketId, out var clientStream))
-                {                    
-                    await clientStream.WriteAsync(message);
+                if (isCurrentUserAnAgent)
+                {
+                    AgentStreams.TryRemove(currentTicketId, out _);
+                    Console.WriteLine($" > Stream do atendente para o ticket {currentTicketId} removido.");
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(" ! Cliente ainda não conectado.");
-                    Console.ResetColor();
+                    ClientStreams.TryRemove(currentTicketId, out _);
+                    Console.WriteLine($" > Stream do cliente para o ticket {currentTicketId} removido.");
                 }
             }
-            else
-            {
-                Console.ForegroundColor = ConsoleColor.DarkGray; // Cor para logs internos
-                Console.WriteLine("-> Encaminhando para atendente");
-                Console.ResetColor();
-
-                ClientStreams.TryAdd(message.TicketId, responseStream);
-
-                if (AgentStreams.TryGetValue(message.TicketId, out var agentStream))
-                {
-                    await agentStream.WriteAsync(message);
-                }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(" ! Atendente ainda não conectado.");
-                    Console.ResetColor();
-                }
-            }
-
-            // Salvar log em arquivo (sem alteração)
-            Directory.CreateDirectory(ChatLogsPath);
-            var logLine = $"[{DateTime.UtcNow}] {message.Sender}: {message.Message}";
-            var logFilePath = Path.Combine(ChatLogsPath, $"chat_{message.TicketId}.log");
-            await File.AppendAllTextAsync(logFilePath, logLine + Environment.NewLine);
         }
     }
+
 
     private static string GenerateTicketId()
     {
@@ -109,4 +193,3 @@ public class SupportService : Support.SupportBase
         return $"TKT-{datePart}-{suffix}";
     }
 }
-
