@@ -13,9 +13,9 @@ Console.WriteLine("  ║                                                    ║"
 Console.WriteLine("  ║               INSTRUÇÕES | ATENDENTE               ║");
 Console.WriteLine("  ║                                                    ║");
 Console.WriteLine("  ╠════════════════════════════════════════════════════╣");
-Console.WriteLine("  ║  Passo 1 - Digite o protocolo (ticket_id)          ║");
+Console.WriteLine("  ║  Passo 1 - Digite o [numero] do Chamado            ║");
 Console.WriteLine("  ║  Passo 2 - Digite seu nome                         ║");
-Console.WriteLine("  ║  Passo 3 - COnverse com o cliente                  ║");
+Console.WriteLine("  ║  Passo 3 - Converse com o cliente                  ║");
 Console.WriteLine("  ║                                                    ║");
 Console.WriteLine("  ╚════════════════════════════════════════════════════╝");
 Console.WriteLine("\n");
@@ -35,18 +35,27 @@ Console.WriteLine("\n > Chamados disponíveis:\n");
 var lines = File.ReadAllLines(ticketFilePath)
                 .Where(line => line.Trim().Length > 0)
                 .ToList();
-
+int index = 1;
 foreach (var line in lines)
 {
     var parts = line.Split('|');
     if (parts.Length >= 5 && parts[4] == "aberto")
     {
-        Console.WriteLine($" > ID: {parts[0]} | Usuário: {parts[1]} | Descrição: {parts[2]}");
+        Console.WriteLine($" [{index}] - Ticket ID: {parts[0]} | Usuário: {parts[1]} | Descrição: {parts[2]}");
+        index++;
     }
 }
 
-Console.Write("\n > Digite o ticket_id que deseja atender: ");
-var ticketId = Console.ReadLine();
+Console.Write("\n > Digite o [ # ] que deseja atender: ");
+var Id = Console.ReadLine();
+
+if (!int.TryParse(Id, out int ticketIndex) || ticketIndex < 1 || ticketIndex > lines.Count)
+{
+    Console.WriteLine(" > ID inválido. Encerrando o programa.");
+    return;
+}
+
+var ticketId = lines[ticketIndex - 1].Split('|')[0].Trim();
 
 Console.Write("\n > Seu nome (atendente): ");
 var nome = Console.ReadLine();

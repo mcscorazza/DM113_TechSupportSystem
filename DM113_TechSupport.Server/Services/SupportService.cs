@@ -32,9 +32,9 @@ public class SupportService : Support.SupportBase
     }
 
     public override async Task ChatSupport(
-    IAsyncStreamReader<ChatMessage> requestStream,
-    IServerStreamWriter<ChatMessage> responseStream,
-    ServerCallContext context)
+        IAsyncStreamReader<ChatMessage> requestStream,
+        IServerStreamWriter<ChatMessage> responseStream,
+        ServerCallContext context)
     {
         await foreach (var message in requestStream.ReadAllAsync())
         {
